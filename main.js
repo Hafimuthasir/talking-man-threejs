@@ -635,6 +635,26 @@ const chatInput    = document.getElementById('chatInput');
 const sendBtn      = document.getElementById('sendBtn');
 const micBtn       = document.getElementById('micBtn');
 
+// Rolling conversation history. Trimmed before every API call so the
+// total chars sent stays under MAX_HISTORY_CHARS — oldest messages are
+// dropped first, but at least the last exchange is always kept so the
+// model retains immediate context.
+const conversationHistory = [];
+const MAX_HISTORY_CHARS = 2500;
+
+function getTrimmedHistory() {
+  let total = 0;
+  const trimmed = [];
+  for (let i = conversationHistory.length - 1; i >= 0; i--) {
+    const chars = conversationHistory[i].content.length;
+    // Always keep the last exchange (2 messages); after that enforce limit.
+    if (total + chars > MAX_HISTORY_CHARS && trimmed.length >= 2) break;
+    total += chars;
+    trimmed.unshift(conversationHistory[i]);
+  }
+  return trimmed;
+}
+
 function appendMessage(text, role) {
   const div = document.createElement('div');
   div.className = `chat-msg ${role}`;
@@ -662,7 +682,7 @@ async function askAssistant(message) {
     const res = await fetch('/api/chat', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ message }),
+      body: JSON.stringify({ message, history: getTrimmedHistory() }),
     });
 
     if (!res.ok) throw new Error(`API error ${res.status}`);
@@ -670,6 +690,10 @@ async function askAssistant(message) {
     const replyText = decodeURIComponent(res.headers.get('X-Reply-Text') || '');
     thinking.remove();
     appendMessage(replyText || '…', 'assistant');
+
+    // Save this exchange to history for future context.
+    conversationHistory.push({ role: 'user',      content: message });
+    conversationHistory.push({ role: 'assistant', content: replyText });
 
     const blob = await res.blob();
     if (currentBlobUrl) URL.revokeObjectURL(currentBlobUrl);

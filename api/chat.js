@@ -46,10 +46,20 @@ Customer Support: 1-800-NOVA-BANK, available 24/7`;
 module.exports = async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).end();
 
-  const { message } = req.body || {};
+  const { message, history = [] } = req.body || {};
   if (!message || !message.trim()) {
     return res.status(400).json({ error: 'No message provided' });
   }
+
+  // Build the message list:
+  //   [system prompt]            — bank knowledge, always present
+  //   [...history]               — trimmed prior context from the frontend
+  //   [{ role: user, message }]  — the actual question, always last
+  const messages = [
+    { role: 'system', content: SYSTEM_PROMPT },
+    ...history.filter(m => m.role && m.content),
+    { role: 'user', content: message.trim() },
+  ];
 
   // --- Groq LLM ---
   const groqRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
@@ -60,10 +70,7 @@ module.exports = async function handler(req, res) {
     },
     body: JSON.stringify({
       model: 'llama-3.3-70b-versatile',
-      messages: [
-        { role: 'system', content: SYSTEM_PROMPT },
-        { role: 'user', content: message.trim() },
-      ],
+      messages,
       max_tokens: 120,
       temperature: 0.6,
     }),
