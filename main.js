@@ -103,8 +103,8 @@ const audioEl = document.getElementById('audioEl');
 const fileNameEl = document.getElementById('fileName');
 const viewerEl = document.getElementById('viewer');
 
-const DEMO_VOICE_PATH = 'sample-voice.m4a';
-const DEMO_VOICE_LABEL = 'sample-voice.m4a (demo)';
+const DEMO_VOICE_PATH = 'sample-voice.mp3';
+const DEMO_VOICE_LABEL = 'sample-voice.mp3 (demo)';
 
 let setStatus = (text) => { statusEl.textContent = text; };
 
