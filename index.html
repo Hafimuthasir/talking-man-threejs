@@ -15,6 +15,18 @@
 </script>
 </head>
 <body>
+  <!-- Password gate -->
+  <div id="gate">
+    <div id="gate-card">
+      <div id="gate-logo">🏦</div>
+      <h1 id="gate-title">Nova Bank Assistant</h1>
+      <p id="gate-sub">Enter the access password to continue</p>
+      <input id="gate-input" type="password" placeholder="Password" autocomplete="current-password" />
+      <p id="gate-error"></p>
+      <button id="gate-btn">Enter</button>
+    </div>
+  </div>
+
   <div id="viewer"></div>
 
   <!-- Chat panel — toggled by chat button, anchored above side tools -->
@@ -66,6 +78,6 @@
   </div>
 
   <audio id="audioEl" preload="auto"></audio>
-  <script type="module" src="main.js?v=16"></script>
+  <script type="module" src="main.js?v=17"></script>
 </body>
 </html>

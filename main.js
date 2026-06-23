@@ -1,3 +1,30 @@
+// ── Password gate ─────────────────────────────────────────────────────
+(function () {
+  const gate     = document.getElementById('gate');
+  const input    = document.getElementById('gate-input');
+  const btn      = document.getElementById('gate-btn');
+  const errorEl  = document.getElementById('gate-error');
+
+  function attempt() {
+    if (input.value === 'letmein!') {
+      gate.style.transition = 'opacity 0.4s';
+      gate.style.opacity = '0';
+      setTimeout(() => gate.remove(), 420);
+      input.focus();
+    } else {
+      errorEl.textContent = 'Wrong password. Try again.';
+      input.classList.remove('shake');
+      void input.offsetWidth; // reflow to restart animation
+      input.classList.add('shake');
+      input.value = '';
+    }
+  }
+
+  btn.addEventListener('click', attempt);
+  input.addEventListener('keydown', (e) => { if (e.key === 'Enter') attempt(); });
+  input.focus();
+})();
+
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
