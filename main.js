@@ -94,19 +94,28 @@ const BREAK_HOLD_SECONDS = 0.35;
 let breakSilence = 0;
 let pausedForBreak = false;
 
-const statusEl = document.getElementById('status');
-const talkBtn = document.getElementById('talkBtn');
-const demoBtn = document.getElementById('demoBtn');
+const statusEl  = document.getElementById('status');
+const startBtn   = document.getElementById('startBtn');
+const btnLabel   = document.getElementById('btn-label');
 const resetViewBtn = document.getElementById('resetViewBtn');
-const audioFileInput = document.getElementById('audioFile');
-const audioEl = document.getElementById('audioEl');
-const fileNameEl = document.getElementById('fileName');
-const viewerEl = document.getElementById('viewer');
-
-const DEMO_VOICE_PATH = 'sample-voice.mp3';
-const DEMO_VOICE_LABEL = 'sample-voice.mp3 (demo)';
+const audioEl    = document.getElementById('audioEl');
+const viewerEl   = document.getElementById('viewer');
 
 let setStatus = (text) => { statusEl.textContent = text; };
+
+// Button state machine: idle | listening | thinking | speaking
+const BTN_ICONS = {
+  default: `<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>`,
+  speaking: `<svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><rect x="4" y="4" width="16" height="16" rx="2"/></svg>`,
+};
+
+function setBtnState(state) {
+  startBtn.className = state === 'idle' ? '' : state;
+  const labels = { idle: 'Start', listening: 'Listening…', thinking: 'Thinking…', speaking: 'Speaking…' };
+  btnLabel.textContent = labels[state] || 'Start';
+  document.getElementById('btn-icon').innerHTML =
+    state === 'speaking' ? BTN_ICONS.speaking : BTN_ICONS.default;
+}
 
 /* ------------------------------------------------------------------
    Scene setup
@@ -359,7 +368,7 @@ loader.load(
     // this whole-model framing is the one confirmed to render correctly.)
     frameCameraOnModel(model);
 
-    setStatus('Upload a voice clip, then click "Click to Talk".');
+    setStatus('Press Start to speak with the assistant.');
   },
   (progress) => {
     if (progress.total) {
@@ -428,29 +437,8 @@ let isTalking = false;
 let smoothedAmplitude = 0;
 let smoothedVowelFactor = 1; // 1 = full jaw openness allowed; only pulled down by consonant-heavy audio
 
-audioFileInput.addEventListener('change', (e) => {
-  const file = e.target.files && e.target.files[0];
-  if (!file) return;
-
-  const url = URL.createObjectURL(file);
-  audioEl.src = url;
-  hasAudioFile = true;
-  fileNameEl.textContent = file.name;
-  talkBtn.disabled = false;
-  setStatus('Ready. Click "Click to Talk" to play.');
-});
-
 resetViewBtn.addEventListener('click', () => {
   if (currentModel) frameCameraOnModel(currentModel);
-});
-
-demoBtn.addEventListener('click', () => {
-  if (isTalking) stopTalking();
-  audioEl.src = DEMO_VOICE_PATH;
-  hasAudioFile = true;
-  fileNameEl.textContent = DEMO_VOICE_LABEL;
-  talkBtn.disabled = false;
-  setStatus('Demo voice loaded. Click "Click to Talk" to play.');
 });
 
 function ensureAudioGraph() {
@@ -472,18 +460,13 @@ function ensureAudioGraph() {
 
 function startTalking() {
   ensureAudioGraph();
-  if (audioCtx.state === 'suspended') {
-    audioCtx.resume();
-  }
+  if (audioCtx.state === 'suspended') audioCtx.resume();
   audioEl.currentTime = 0;
   audioEl.play();
   isTalking = true;
-  talkBtn.textContent = 'Stop';
-  talkBtn.classList.add('talking');
-  setStatus('Speaking…');
+  setBtnState('speaking');
+  setStatus('');
   if (talkAction) {
-    // Restart the baked talking performance (body + mouth morphs) from
-    // its first frame each time, in sync with the audio actually starting.
     talkAction.reset();
     talkAction.play();
     talkAction.paused = false;
@@ -496,13 +479,9 @@ function stopTalking() {
   audioEl.pause();
   audioEl.currentTime = 0;
   isTalking = false;
-  talkBtn.textContent = 'Click to Talk';
-  talkBtn.classList.remove('talking');
-  setStatus('Ready. Click "Click to Talk" to play.');
+  setBtnState('idle');
+  setStatus('Press Start to speak with the assistant.');
   if (talkAction) {
-    // Freeze back on frame 0 (relaxed idle, mouth closed) instead of
-    // leaving him stuck mid-gesture/mid-mouth-shape from wherever the
-    // clip happened to be when audio stopped.
     talkAction.paused = true;
     talkAction.time = 0;
     if (mixer) mixer.update(0);
@@ -510,15 +489,6 @@ function stopTalking() {
   breakSilence = 0;
   pausedForBreak = false;
 }
-
-talkBtn.addEventListener('click', () => {
-  if (!hasAudioFile) return;
-  if (isTalking) {
-    stopTalking();
-  } else {
-    startTalking();
-  }
-});
 
 audioEl.addEventListener('ended', stopTalking);
 
@@ -630,15 +600,14 @@ animate();
 /* ------------------------------------------------------------------
    AI Chat
 ------------------------------------------------------------------- */
-const chatMessages = document.getElementById('chat-messages');
-const chatInput    = document.getElementById('chatInput');
-const sendBtn      = document.getElementById('sendBtn');
-const micBtn       = document.getElementById('micBtn');
+const chatPanel     = document.getElementById('chat-panel');
+const chatMessages  = document.getElementById('chat-messages');
+const chatInput     = document.getElementById('chatInput');
+const sendBtn       = document.getElementById('sendBtn');
+const chatToggleBtn = document.getElementById('chatToggleBtn');
 
-// Rolling conversation history. Trimmed before every API call so the
-// total chars sent stays under MAX_HISTORY_CHARS — oldest messages are
-// dropped first, but at least the last exchange is always kept so the
-// model retains immediate context.
+// Rolling conversation history — trimmed oldest-first to stay under
+// MAX_HISTORY_CHARS before each API call; always keeps the last exchange.
 const conversationHistory = [];
 const MAX_HISTORY_CHARS = 2500;
 
@@ -647,7 +616,6 @@ function getTrimmedHistory() {
   const trimmed = [];
   for (let i = conversationHistory.length - 1; i >= 0; i--) {
     const chars = conversationHistory[i].content.length;
-    // Always keep the last exchange (2 messages); after that enforce limit.
     if (total + chars > MAX_HISTORY_CHARS && trimmed.length >= 2) break;
     total += chars;
     trimmed.unshift(conversationHistory[i]);
@@ -673,10 +641,9 @@ async function askAssistant(message) {
   appendMessage(message, 'user');
   chatInput.value = '';
   sendBtn.disabled = true;
-  micBtn.disabled  = true;
+  setBtnState('thinking');
 
   const thinking = appendMessage('Thinking…', 'thinking');
-  setStatus('Assistant is thinking…');
 
   try {
     const res = await fetch('/api/chat', {
@@ -691,7 +658,6 @@ async function askAssistant(message) {
     thinking.remove();
     appendMessage(replyText || '…', 'assistant');
 
-    // Save this exchange to history for future context.
     conversationHistory.push({ role: 'user',      content: message });
     conversationHistory.push({ role: 'assistant', content: replyText });
 
@@ -707,20 +673,29 @@ async function askAssistant(message) {
     console.error(err);
     thinking.remove();
     appendMessage('Sorry, I could not connect to the assistant.', 'assistant');
-    setStatus('Upload a voice clip, then click "Click to Talk".');
+    setBtnState('idle');
+    setStatus('Press Start to speak with the assistant.');
   } finally {
     sendBtn.disabled = false;
-    micBtn.disabled  = false;
   }
 }
 
+// Text input send
 sendBtn.addEventListener('click', () => askAssistant(chatInput.value));
 chatInput.addEventListener('keydown', (e) => {
   if (e.key === 'Enter') askAssistant(chatInput.value);
 });
 
-// Mic input via Web Speech API
+// Chat panel toggle
+chatToggleBtn.addEventListener('click', () => {
+  const open = chatPanel.classList.toggle('visible');
+  chatToggleBtn.classList.toggle('active', open);
+  if (open) chatInput.focus();
+});
+
+// ── Main Start button with SpeechRecognition ──────────────────────────
 const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+
 if (SpeechRecognition) {
   const recognition = new SpeechRecognition();
   recognition.lang = 'en-US';
@@ -729,21 +704,39 @@ if (SpeechRecognition) {
 
   recognition.onresult = (e) => {
     const transcript = e.results[0][0].transcript;
-    chatInput.value = transcript;
+    // Mirror spoken question into the chat panel (open if closed)
+    if (!chatPanel.classList.contains('visible')) {
+      chatPanel.classList.add('visible');
+      chatToggleBtn.classList.add('active');
+    }
     askAssistant(transcript);
   };
 
-  recognition.onstart = () => micBtn.classList.add('listening');
-  recognition.onend   = () => micBtn.classList.remove('listening');
-  recognition.onerror = () => micBtn.classList.remove('listening');
+  recognition.onerror = () => setBtnState('idle');
+  recognition.onend = () => {
+    if (startBtn.classList.contains('listening')) setBtnState('idle');
+  };
 
-  micBtn.addEventListener('click', () => {
-    if (micBtn.classList.contains('listening')) {
-      recognition.stop();
-    } else {
-      recognition.start();
+  startBtn.addEventListener('click', () => {
+    if (isTalking || startBtn.classList.contains('speaking')) {
+      stopTalking();
+      return;
     }
+    if (startBtn.classList.contains('thinking')) return;
+    if (startBtn.classList.contains('listening')) {
+      recognition.stop();
+      setBtnState('idle');
+      return;
+    }
+    setBtnState('listening');
+    recognition.start();
   });
 } else {
-  micBtn.style.display = 'none';
+  // No SpeechRecognition — Start opens the text chat instead
+  startBtn.addEventListener('click', () => {
+    if (isTalking) { stopTalking(); return; }
+    chatPanel.classList.add('visible');
+    chatToggleBtn.classList.add('active');
+    chatInput.focus();
+  });
 }

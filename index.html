@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Talking Man — three.js viewer</title>
+<title>Nova Bank Assistant</title>
 <link rel="stylesheet" href="style.css" />
 <script type="importmap">
 {
@@ -17,25 +17,7 @@
 <body>
   <div id="viewer"></div>
 
-  <div id="ui">
-    <div id="status">Loading character…</div>
-
-    <div id="controls">
-      <button id="demoBtn">Demo Voice</button>
-
-      <label id="uploadLabel" for="audioFile">Upload voice (mp3)</label>
-      <input type="file" id="audioFile" accept="audio/*" />
-
-      <button id="talkBtn" disabled>Click to Talk</button>
-
-      <button id="resetViewBtn">Reset View</button>
-    </div>
-
-    <div id="fileName"></div>
-  </div>
-
-  <audio id="audioEl" preload="auto"></audio>
-
+  <!-- Chat panel — toggled by chat button, anchored above side tools -->
   <div id="chat-panel">
     <div id="chat-header">
       <span id="chat-dot"></span>
@@ -43,25 +25,47 @@
     </div>
     <div id="chat-messages"></div>
     <div id="chat-input-row">
-      <button id="micBtn" title="Voice input" aria-label="Voice input">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
-          <path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/>
-          <line x1="8" y1="23" x2="16" y2="23"/>
-        </svg>
-      </button>
       <input id="chatInput" type="text" placeholder="Ask about Nova Bank…" autocomplete="off" />
       <button id="sendBtn" title="Send" aria-label="Send">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
           <line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>
         </svg>
       </button>
     </div>
   </div>
 
-  <!-- The ?v= query bumps on every main.js edit so the browser doesn't
-       serve a stale cached copy of the module on reload (this static
-       file server doesn't send cache-busting headers itself). -->
-  <script type="module" src="main.js?v=15"></script>
+  <!-- Small tool buttons — right bottom -->
+  <div id="side-tools">
+    <button id="chatToggleBtn" title="Text chat" aria-label="Toggle text chat">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+      </svg>
+    </button>
+    <button id="resetViewBtn" title="Reset view" aria-label="Reset camera view">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="1 4 1 10 7 10"/>
+        <path d="M3.51 15a9 9 0 1 0 .49-4.5"/>
+      </svg>
+    </button>
+  </div>
+
+  <!-- Main voice button — center bottom -->
+  <div id="main-btn-wrap">
+    <div id="status">Loading character…</div>
+    <button id="startBtn" aria-label="Start voice assistant">
+      <span id="btn-icon">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
+          <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+          <line x1="12" y1="19" x2="12" y2="23"/>
+          <line x1="8" y1="23" x2="16" y2="23"/>
+        </svg>
+      </span>
+    </button>
+    <div id="btn-label">Start</div>
+  </div>
+
+  <audio id="audioEl" preload="auto"></audio>
+  <script type="module" src="main.js?v=16"></script>
 </body>
 </html>
