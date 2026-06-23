@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Talking Man — three.js viewer</title>
+<link rel="stylesheet" href="style.css" />
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+  }
+}
+</script>
+</head>
+<body>
+  <div id="viewer"></div>
+
+  <div id="ui">
+    <div id="status">Loading character…</div>
+
+    <div id="controls">
+      <button id="demoBtn">Demo Voice</button>
+
+      <label id="uploadLabel" for="audioFile">Upload voice (mp3)</label>
+      <input type="file" id="audioFile" accept="audio/*" />
+
+      <button id="talkBtn" disabled>Click to Talk</button>
+
+      <button id="resetViewBtn">Reset View</button>
+    </div>
+
+    <div id="fileName"></div>
+  </div>
+
+  <audio id="audioEl" preload="auto"></audio>
+
+  <!-- The ?v= query bumps on every main.js edit so the browser doesn't
+       serve a stale cached copy of the module on reload (this static
+       file server doesn't send cache-busting headers itself). -->
+  <script type="module" src="main.js?v=12"></script>
+</body>
+</html>

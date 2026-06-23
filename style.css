@@ -1,0 +1,157 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html, body {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+  background: #14161a;
+}
+
+#viewer {
+  position: absolute;
+  inset: 0;
+}
+
+#viewer canvas {
+  display: block;
+}
+
+#ui {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  padding: 24px 16px 32px;
+  background: linear-gradient(to top, rgba(0,0,0,0.55), rgba(0,0,0,0));
+  pointer-events: none;
+}
+
+#ui * {
+  pointer-events: auto;
+}
+
+#status {
+  color: #f2f2f2;
+  font-size: 14px;
+  letter-spacing: 0.2px;
+  text-shadow: 0 1px 3px rgba(0,0,0,0.6);
+}
+
+#controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+#audioFile {
+  display: none;
+}
+
+#demoBtn {
+  display: inline-flex;
+  align-items: center;
+  height: 44px;
+  padding: 0 18px;
+  border-radius: 22px;
+  background: rgba(120,90,255,0.25);
+  border: 1px solid rgba(170,140,255,0.5);
+  color: #f2f2f2;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background 0.15s ease;
+  backdrop-filter: blur(6px);
+}
+
+#demoBtn:hover {
+  background: rgba(120,90,255,0.4);
+}
+
+#uploadLabel {
+  display: inline-flex;
+  align-items: center;
+  height: 44px;
+  padding: 0 18px;
+  border-radius: 22px;
+  background: rgba(255,255,255,0.12);
+  border: 1px solid rgba(255,255,255,0.25);
+  color: #f2f2f2;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background 0.15s ease;
+  backdrop-filter: blur(6px);
+}
+
+#uploadLabel:hover {
+  background: rgba(255,255,255,0.2);
+}
+
+#resetViewBtn {
+  display: inline-flex;
+  align-items: center;
+  height: 44px;
+  padding: 0 18px;
+  border-radius: 22px;
+  background: rgba(255,255,255,0.12);
+  border: 1px solid rgba(255,255,255,0.25);
+  color: #f2f2f2;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background 0.15s ease;
+  backdrop-filter: blur(6px);
+}
+
+#resetViewBtn:hover {
+  background: rgba(255,255,255,0.2);
+}
+
+#talkBtn {
+  height: 48px;
+  padding: 0 26px;
+  border-radius: 24px;
+  border: none;
+  background: #4f8cff;
+  color: #fff;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s ease, transform 0.1s ease;
+}
+
+#talkBtn:hover:not(:disabled) {
+  background: #6c9fff;
+}
+
+#talkBtn:active:not(:disabled) {
+  transform: scale(0.97);
+}
+
+#talkBtn:disabled {
+  background: rgba(255,255,255,0.15);
+  color: rgba(255,255,255,0.4);
+  cursor: not-allowed;
+}
+
+#talkBtn.talking {
+  background: #ff5c5c;
+}
+
+#talkBtn.talking:hover {
+  background: #ff7575;
+}
+
+#fileName {
+  color: rgba(255,255,255,0.6);
+  font-size: 12px;
+  min-height: 14px;
+}
