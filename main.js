@@ -626,3 +626,100 @@ function animate() {
 }
 
 animate();
+
+/* ------------------------------------------------------------------
+   AI Chat
+------------------------------------------------------------------- */
+const chatMessages = document.getElementById('chat-messages');
+const chatInput    = document.getElementById('chatInput');
+const sendBtn      = document.getElementById('sendBtn');
+const micBtn       = document.getElementById('micBtn');
+
+function appendMessage(text, role) {
+  const div = document.createElement('div');
+  div.className = `chat-msg ${role}`;
+  div.textContent = text;
+  chatMessages.appendChild(div);
+  chatMessages.scrollTop = chatMessages.scrollHeight;
+  return div;
+}
+
+let currentBlobUrl = null;
+
+async function askAssistant(message) {
+  message = message.trim();
+  if (!message) return;
+
+  appendMessage(message, 'user');
+  chatInput.value = '';
+  sendBtn.disabled = true;
+  micBtn.disabled  = true;
+
+  const thinking = appendMessage('Thinking…', 'thinking');
+  setStatus('Assistant is thinking…');
+
+  try {
+    const res = await fetch('/api/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message }),
+    });
+
+    if (!res.ok) throw new Error(`API error ${res.status}`);
+
+    const replyText = decodeURIComponent(res.headers.get('X-Reply-Text') || '');
+    thinking.remove();
+    appendMessage(replyText || '…', 'assistant');
+
+    const blob = await res.blob();
+    if (currentBlobUrl) URL.revokeObjectURL(currentBlobUrl);
+    currentBlobUrl = URL.createObjectURL(blob);
+
+    if (isTalking) stopTalking();
+    audioEl.src = currentBlobUrl;
+    hasAudioFile = true;
+    startTalking();
+  } catch (err) {
+    console.error(err);
+    thinking.remove();
+    appendMessage('Sorry, I could not connect to the assistant.', 'assistant');
+    setStatus('Upload a voice clip, then click "Click to Talk".');
+  } finally {
+    sendBtn.disabled = false;
+    micBtn.disabled  = false;
+  }
+}
+
+sendBtn.addEventListener('click', () => askAssistant(chatInput.value));
+chatInput.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') askAssistant(chatInput.value);
+});
+
+// Mic input via Web Speech API
+const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+if (SpeechRecognition) {
+  const recognition = new SpeechRecognition();
+  recognition.lang = 'en-US';
+  recognition.interimResults = false;
+  recognition.maxAlternatives = 1;
+
+  recognition.onresult = (e) => {
+    const transcript = e.results[0][0].transcript;
+    chatInput.value = transcript;
+    askAssistant(transcript);
+  };
+
+  recognition.onstart = () => micBtn.classList.add('listening');
+  recognition.onend   = () => micBtn.classList.remove('listening');
+  recognition.onerror = () => micBtn.classList.remove('listening');
+
+  micBtn.addEventListener('click', () => {
+    if (micBtn.classList.contains('listening')) {
+      recognition.stop();
+    } else {
+      recognition.start();
+    }
+  });
+} else {
+  micBtn.style.display = 'none';
+}
